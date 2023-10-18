@@ -1,33 +1,50 @@
-// import { createServer } from 'node:http'
-
-// const server = createServer((request, response) => {
-//   response.write('oi2')
-  
-//   return response.end()
-// })
-
-// server.listen(3333)
-
 import { fastify } from 'fastify'
+import { DatabasePostgres } from './database-postgres.js'
 
 const server = fastify()
+const database = new DatabasePostgres()
 
-server.post('/videos', () => {
-  return 'oi'
+server.post('/videos', async (request, reply) => {
+  const { title, description, url } = request.body
+  
+  await database.create({
+    title,
+    description,
+    url,
+  })
+
+  return reply.status(201).send()
 })
 
-server.get('/videos', () => {
-  return 'oi'
+server.get('/videos', async (request) => {
+  const search = request.query.search
+
+  const videos = await database.list(search)
+
+  return videos
 })
 
-server.put('/videos/:id', () => {
-  return 'oi'
+server.put('/videos/:id', async (request, reply) => {
+  const videoId = request.params.id
+  const { title, description, url } = request.body
+
+  await database.update(videoId, {
+    title,
+    description,
+    url,
+  })
+
+  return reply.status(204).send()
 })
 
-server.delete('/videos/:id', () => {
-  return 'oi'
+server.delete('/videos/:id', async (request, reply) => {
+  const videoId = request.params.id
+
+  await database.delete(videoId)
+
+  return reply.status(204).send()
 })
 
 server.listen({
-  port: 3333,
+  port: process.env.PORT ?? 3333,
 })
